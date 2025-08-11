@@ -77,12 +77,20 @@ Damage Calculator
 <tr id="mode3" hidden>
 <td>Weight Ratio</td><td><input type="text" id="ratio" onkeypress="return validFloat(event)" value="1"/></td>
 </tr>
+<tr>
+<td>Hunker Active</td><td><input type="checkbox" onchange="toggleHunkered(this.checked)"/></td>
+</tr>
+<tr id="hunkered" hidden>
+<td>Hunker Value</td><td><input type="text" id="enemy_hunker" onkeypress="return validInt(event)" value="70"/>%</td>
+</tr>
+<tr>
 <td>Show Steps</td><td><input type="checkbox" onchange="toggleSteps(this.checked)"/></td>
+</tr>
 </table>
 <br />
-<div>With a <span id="insert_ratio">0</span> weight ratio, you will deal <span id="insert_mult">0</span>x damage, for a total of <span id="insert_damage">0</span> damage.</div>
+<div>With a <span id="insert_ratio">0</span> weight ratio, you will deal <span id="insert_mult">0</span>x damage<span id="insert_hunker"></span>, for a total of <span id="insert_damage">0</span> damage.</div>
 <br />
-<table id="results" hidden><tr><td>$$myDamage \cdot \frac{1 + \mathrm{min}(\frac{myWeight}{enemyWeight}, 3)}{2}$$</td></tr></table>
+<table id="results" hidden><tr><td>$$myDamage \cdot \frac{1 + \mathrm{min}(\frac{myWeight}{enemyWeight}, 3)}{2} \cdot (1 - hunker)$$</td></tr></table>
 <script>
     MathJax = {
         tex: {inlineMath: {'[+]': [['$', '$']]}},
@@ -115,6 +123,13 @@ Damage Calculator
     function toggleSteps(checked)
     {
         $("#results").toggle(checked);
+    }
+    
+    var useHunker = false;
+    function toggleHunkered(checked)
+    {
+        $('#hunkered').toggle(checked);
+        useHunker = checked;
     }
     
     function addCommas(num)
@@ -172,6 +187,11 @@ Damage Calculator
         return +num.toFixed(places);
     }
     
+    function s(n)
+    {
+        return round(n, 5);
+    }
+    
     function performCalculation()
     {
         $(".step").remove();
@@ -182,17 +202,26 @@ Damage Calculator
         let ratio = replaceIfEmpty($('#ratio')[0].value, 1);
         $('#ratio')[0].value = +ratio;
         
+        let hunk_percent = 0;
+        
+        if (useHunker)
+            hunk_percent = replaceIfEmpty($('#enemy_hunker')[0].value, 70);
+            
+        let hunk_reduct = hunk_percent / 100;
+            
+        $('#insert_hunker').html(useHunker ? `, -${hunk_percent}% reduction from hunker` : '');
         
         if (!useRatio)
         {
             addMathRow(
-                `\\mathbf{${damage}} \\cdot \\frac{1 + \\mathrm{min}(\\mathbf{\\frac{${weight}}{${enemyWeight}}}, 3)}{2}`
+                `\\mathbf{${damage}} \\cdot \\frac{1 + \\mathrm{min}(\\mathbf{\\frac{${weight}}{${enemyWeight}}}, 3)}{2} \\cdot (1 - \\mathbf{${s(hunk_reduct)}})`
             );
             ratio = enemyWeight === 0 ? 0 : weight / enemyWeight;
         }   
-            
+        
+        let hunk_final = 1 - hunk_reduct;
         addMathRow(
-            `${damage} \\cdot \\frac{1 + \\mathrm{min}(\\mathbf{${ratio}}, 3)}{2}`
+            `${damage} \\cdot \\frac{1 + \\mathrm{min}(\\mathbf{${s(ratio)}}, 3)}{2} \\cdot \\mathbf{${s(hunk_final)}}`
         );
         
         let calc = ratio;
@@ -205,13 +234,13 @@ Damage Calculator
             $('#insert_ratio').html(`${round(calc*100, 2)}%`);
         
         addMathRow(
-            `${damage} \\cdot \\frac{1 + \\mathbf{${calc}}}{2}`
+            `${damage} \\cdot \\frac{1 + \\mathbf{${s(calc)}}}{2} \\cdot ${s(hunk_final)}`
         );
         
         calc++;
         
         addMathRow(
-            `${damage} \\cdot \\frac{\\mathbf{${calc}}}{2}`
+            `${damage} \\cdot \\frac{\\mathbf{${s(calc)}}}{2} \\cdot ${s(hunk_final)}`
         );
         
         calc /= 2;
@@ -219,10 +248,10 @@ Damage Calculator
         $('#insert_mult').html(round(calc,2));
         
         addMathRow(
-            `${damage} \\cdot \\mathbf{${calc}}`
+            `${damage} \\cdot \\mathbf{${s(calc)}} \\cdot ${s(hunk_final)}`
         );
         
-        calc = round(damage * calc);
+        calc = round(damage * calc * hunk_final);
         
         $('#insert_damage').html(addCommas(calc));
         
