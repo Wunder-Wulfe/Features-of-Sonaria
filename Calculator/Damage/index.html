@@ -40,6 +40,10 @@ body:not(.MathJax) {
     margin: 0;
 }
 
+span {
+    font-weight: bold;
+}
+
 h1 {
     padding: 25px;
 }
@@ -102,7 +106,7 @@ Damage Calculator
 </tr>
 </table>
 <br />
-<div>With a <span id="insert_ratio">0</span> weight ratio, you will deal <span id="insert_mult">0</span>x damage<span id="insert_hunker"></span>, for a total of <span id="insert_damage">0</span> damage.</div>
+<div>With a <span id="insert_ratio">0</span> weight ratio, you will deal <span id="insert_mult">0</span><b>x</b> damage<span id="insert_hunker"></span>, for a total of <span id="insert_damage">0</span> damage.</div>
 <br />
 <table id="results" hidden><tr><td>$$myDamage \cdot \frac{1 + \mathrm{min}(\frac{myWeight}{enemyWeight}, 3)}{2} \cdot (1 - hunker)$$</td></tr></table>
 <script>
@@ -232,11 +236,21 @@ Damage Calculator
             );
             ratio = enemyWeight === 0 ? 0 : weight / enemyWeight;
         }   
+        else
+            addMathRow(
+                `${damage} \\cdot \\frac{1 + \\mathrm{min}(\\mathbf{${s(ratio)}}, 3)}{2} \\cdot (1 - \\mathbf{${s(hunk_reduct)}})`
+            );
         
         let hunk_final = 1 - hunk_reduct;
-        addMathRow(
-            `${damage} \\cdot \\frac{1 + \\mathrm{min}(\\mathbf{${s(ratio)}}, 3)}{2} \\cdot \\mathbf{${s(hunk_final)}}`
-        );
+        
+        if (useRatio)
+            addMathRow(
+                `${damage} \\cdot \\frac{1 + \\mathrm{min}(${s(ratio)}, 3)}{2} \\cdot \\mathbf{${s(hunk_final)}}`
+            );
+        else
+            addMathRow(
+                `${damage} \\cdot \\frac{1 + \\mathrm{min}(\\mathbf{${s(ratio)}}, 3)}{2} \\cdot \\mathbf{${s(hunk_final)}}`
+            );
         
         let calc = ratio;
         if (calc > 3)
