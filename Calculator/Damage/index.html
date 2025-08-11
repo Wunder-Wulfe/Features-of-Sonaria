@@ -2,7 +2,238 @@
 <html>
 <head>
 <title>Damage Calculator</title>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js"></script>
+<script
+  src="https://code.jquery.com/jquery-3.7.1.min.js"
+  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+  crossorigin="anonymous"></script>
+<style>
+
+body:not(.MathJax) {
+    text-align: center;
+    font-family: Helvetica, Arial;
+    font-size: 1.2em;
+}
+
+#results td {
+    padding: 0;
+    margin: 0;
+}
+
+.MathJax {
+    font-size: 1.1em !important;
+    padding: 0;
+    margin: 0;
+}
+
+h1 {
+    padding: 25px;
+}
+
+table, h1 {
+    margin: auto;
+    width: 85%;
+}
+
+table, td {
+    border: 1px solid;
+}
+
+td {
+    padding: 10px;
+}
+
+input[type=text] {
+    text-align: center;
+    width: 50%;
+    height: 1.2em;
+    font-size: 1em;
+}
+
+input[type=checkbox] {
+    width: 1.5em;
+    height: 1.5em;
+}
+
+</style>
 </head>
 <body>
+<h1>
+Damage Calculator
+</h1>
+<table>
+<tr>
+<td>My Damage</td><td><input type="text" id="my_damage" value="1000" onkeypress="return validInt(event)"/></td>
+</tr>
+<tr>
+<td>Ratio</td><td><input type="checkbox" onchange="toggleRatio(this.checked)"/></td>
+</tr>
+<tr id="mode1">
+<td>My Weight</td><td><input type="text" id="my_weight" onkeypress="return validInt(event)" value="0"/></td>
+</tr>
+<tr id="mode2">
+<td>Enemy's Weight</td><td><input type="text" id="enemy_weight" onkeypress="return validInt(event)" value="0"/></td>
+</tr>
+<tr id="mode3" hidden>
+<td>Weight Ratio</td><td><input type="text" id="ratio" onkeypress="return validFloat(event)" value="1"/></td>
+</tr>
+<td>Show Steps</td><td><input type="checkbox" onchange="toggleSteps(this.checked)"/></td>
+</table>
+<br />
+<div>With a <span id="insert_ratio">0</span> weight ratio, you will deal <span id="insert_mult">0</span>x damage, for a total of <span id="insert_damage">0</span> damage.</div>
+<br />
+<table id="results" hidden><tr><td>$$myDamage \cdot \frac{1 + \mathrm{min}(\frac{myWeight}{enemyWeight}, 3)}{2}$$</td></tr></table>
+<script>
+    MathJax = {
+        tex: {inlineMath: {'[+]': [['$', '$']]}},
+        svg: {fontCache: 'global'},
+        startup: {
+            ready: () => {
+                let x = MathJax.startup.defaultReady();
+                
+                performCalculation();
+                
+                return x;
+            }
+        }
+    };
+    
+    let to_char = str => str.charCodeAt(0);
+    var codeZero = to_char('0');
+    var codeNine = to_char('9');
+    var codeDot = to_char('.');
+    function validInt(value)
+    {
+        return value.charCode >= codeZero && value.charCode <= codeNine;
+    }
+    
+    function validFloat(value)
+    {
+        return value.charCode == codeDot || validInt(value);
+    }
+    
+    function toggleSteps(checked)
+    {
+        $("#results").toggle(checked);
+    }
+    
+    function addCommas(num)
+    {
+        return num.toLocaleString('en-US');
+    }
+    
+    var useRatio = false;
+    function toggleRatio(checked)
+    {
+        $("#mode1").toggle(!checked);
+        $("#mode2").toggle(!checked);
+        $("#mode3").toggle(checked);
+        useRatio = checked;
+    }
+    
+    function isEmpty(str)
+    {
+        return str.trim().length === 0 
+    }
+    
+    function checkNaN(val, def=0)
+    {
+        return val==val ? val : def;
+    }
+    function replaceIfEmpty(str, value=0)
+    {
+        return isEmpty(str) ? value : checkNaN(+str, value);
+    }
+    
+    function tblRow(data=null, id=null, cls=null)
+    {
+        let r = document.createElement('tr');
+        let c = document.createElement('td');
+        if (data !== null) c.append(data);
+        r.append(c);
+        if (cls !== null) r.className  = cls;
+        if (id !== null) r.id = id;
+        return r;
+    }
+    
+    function addMathRow(eq)
+    {
+        $('#results').append(tblRow(`$$${eq}$$`, null, 'step'));	
+    }
+    
+    function reRenderMath()
+    {
+        MathJax.texReset();
+        MathJax.typesetPromise();
+    }
+    
+    function round(num, places=0)
+    {
+        return +num.toFixed(places);
+    }
+    
+    function performCalculation()
+    {
+        $(".step").remove();
+        
+        let damage = replaceIfEmpty($('#my_damage')[0].value, 0);
+        let weight = replaceIfEmpty($('#my_weight')[0].value, 0);
+        let enemyWeight = replaceIfEmpty($('#enemy_weight')[0].value, 0);
+        let ratio = replaceIfEmpty($('#ratio')[0].value, 1);
+        $('#ratio')[0].value = +ratio;
+        
+        
+        if (!useRatio)
+        {
+            addMathRow(
+                `\\mathbf{${damage}} \\cdot \\frac{1 + \\mathrm{min}(\\mathbf{\\frac{${weight}}{${enemyWeight}}}, 3)}{2}`
+            );
+            ratio = enemyWeight === 0 ? 0 : weight / enemyWeight;
+        }   
+            
+        addMathRow(
+            `${damage} \\cdot \\frac{1 + \\mathrm{min}(\\mathbf{${ratio}}, 3)}{2}`
+        );
+        
+        let calc = ratio;
+        if (calc > 3)
+        {
+            $('#insert_ratio').html(`${round(calc*100, 2)}% <em>(capped at 300%)</em>`);
+            calc = 3;
+        }
+        else
+            $('#insert_ratio').html(`${round(calc*100, 2)}%`);
+        
+        addMathRow(
+            `${damage} \\cdot \\frac{1 + \\mathbf{${calc}}}{2}`
+        );
+        
+        calc++;
+        
+        addMathRow(
+            `${damage} \\cdot \\frac{\\mathbf{${calc}}}{2}`
+        );
+        
+        calc /= 2;
+        
+        $('#insert_mult').html(round(calc,2));
+        
+        addMathRow(
+            `${damage} \\cdot \\mathbf{${calc}}`
+        );
+        
+        calc = round(damage * calc);
+        
+        $('#insert_damage').html(addCommas(calc));
+        
+        addMathRow(
+            `= \\mathbf{${calc}}`
+        );
+        
+        reRenderMath();
+    }
+    
+    $('input').on('change', performCalculation);
+</script>
 </body>
 </html>
