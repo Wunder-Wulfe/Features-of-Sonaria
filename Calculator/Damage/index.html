@@ -238,7 +238,7 @@ Damage Calculator
         }   
         else
             addMathRow(
-                `${damage} \\cdot \\frac{1 + \\mathrm{min}(\\mathbf{${s(ratio)}}, 3)}{2} \\cdot (1 - \\mathbf{${s(hunk_reduct)}})`
+                `\\mathbf{${damage}} \\cdot \\frac{1 + \\mathrm{min}(\\mathbf{${s(ratio)}}, 3)}{2} \\cdot (1 - \\mathbf{${s(hunk_reduct)}})`
             );
         
         let hunk_final = 1 - hunk_reduct;
