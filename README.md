@@ -5,7 +5,7 @@
 
 # Currently Available Tools
 
-* [Damage Calculator](https://wunder-wulfe.github.io/Features-of-Sonaria/Calculator/Damage/): Calculate damage values due to the proportions between the weights of two creatures.
+* [Damage Calculator](https://wunder-wulfe.github.io/Features-of-Sonaria/Calculator/Damage/): Calculate damage values after taking into account the proportions between the weights of creatures.
 
 
 -------
