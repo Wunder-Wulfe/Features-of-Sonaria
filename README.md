@@ -10,4 +10,8 @@
 
 -------
 
+The *Database* and *Simulator* portions of the website are still being ported over from the [Incomplete Python Version](https://replit.com/@WunderWulfe/Sonaria-Creature-Database), and will allow for accurate simulations of growth, battle, and provide a convenient way to query, organize, and sort creatures and other data.
+
+-------
+
 *This is under no affiliation with the Creatures of Sonaria game or IP, and is for educational and informative purposes only*
