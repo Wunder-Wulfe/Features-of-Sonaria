@@ -101,6 +101,11 @@ input[type=checkbox] {
     --dynamic-dark: #322;
 }
 
+.tx-heal {
+    --dynamic-color: #2E0;
+    --dynamic-dark: #020;
+}
+
 .tx-stam {
     --dynamic-color: #FE1;
     --dynamic-dark: #332;
@@ -172,19 +177,29 @@ input.number-box {
     -webkit-text-stroke: 0.03em #132;
 }
 
+.effect-positive {
+    color: #3F6;
+    -webkit-text-stroke: 0.03em #132;
+}
+
 .buff-negative {
     color: #F44;
     -webkit-text-stroke: 0.03em #311;
 }
 
+.effect-negative {
+    color: #F22;
+    -webkit-text-stroke: 0.03em #311;
+}
+
 .ailment-list {
-  width: 100%;
+  width: 50%;
+  margin: auto;
   display: flex;
   flex-flow: row wrap;
   justify-content: center;
   align-items: center;
   align-content: center;
-  margin: 0;
   padding: 0;
   vertical-align: middle;
   text-align: center;
@@ -192,7 +207,7 @@ input.number-box {
 
 .ailment {
   position: relative;
-  margin: 0.8em;
+  margin: 1.1em 1.5em;
   vertical-align: center;
   text-align: center;
   width: 7.5em;
@@ -245,11 +260,11 @@ input.number-box {
     top: 0%;
     text-align: right;
     font-size: 3.25em;
-    border-radius: 0.2em;
     -webkit-text-stroke: 0.03em #222;
-    transition: 0.1s ease-in-out;
     font-weight: bold;
-    
+
+    border-radius: 0.2em;
+    transition: 0.1s ease-in-out;
     &:hover {
         background: rgba(20,20,20,0.5);
     }
@@ -286,13 +301,14 @@ img {
     width: 300%;
     height: 200%;
     left: -100%;
-    top: -210%;
+    top: -230%;
     outline: 0.2em solid rgba(40,40,40,0.95);
     border-radius: 0.2em;
     display: flex;
     justify-content: flex-start;
     align-items: stretch;
     flex-flow: column;
+    z-index: 5;
 }
 
 .ailment-info {
@@ -347,6 +363,59 @@ img {
     filter: brightness(50%);
 }
 
+.ailment-title {
+    position: absolute;
+    font-weight: bold;
+    font-size: 1.4em;
+    top: -25%;
+    left: -50%;
+    -webkit-text-stroke: 0.03em #222;
+    width: 200%;
+    z-index: 1;
+}
+
+.tx-ailname {
+    position: absolute;
+    font-weight: bold;
+    font-size: 2.5em;
+    top: -275%;
+    left: -100%;
+    -webkit-text-stroke: 0.03em #222;
+    width: 300%;
+    z-index: 1;
+    
+    border-radius: 0.2em;
+    transition: 0.1s ease-in-out;
+    background: rgba(20,20,20,0.2);
+    &:hover {
+        background: rgba(20,20,20,0.5);
+    }
+}
+
+.floater {
+    position: absolute;
+    width: 20em;
+    left: 0;
+    top: 0;
+    display: block;
+    z-index: 10000;
+}
+
+.floater table {
+    width: 100%;
+    background: rgba(20,20,20,0.6);
+    border-radius: 0.2em;
+}
+
+.floater td {
+    height: 100%;
+    font-size: 1em;
+    margin: auto;
+    width: 100%;
+    vertical-align: middle;
+    padding: 0.5em;
+}
+
 </style>
 </head>
 <body>
@@ -354,7 +423,7 @@ img {
 Stat Calculator
 </h1>
 <br /><hr /><br />
-<h2>Base Stats</h2>
+<h2>Base Stats</h2><br />Show Advanced Stats <input type="checkbox" id="show_more" checked><br />
 <br />
 <table class="stat-box">
 <colgroup>
@@ -376,7 +445,7 @@ Stat Calculator
             <td><input class="number-box" id="health" type="text" onkeypress="return validLong(event)" value="0"/></td>
             <td></td>
         </tr>
-        <tr>
+        <tr class="advanced">
             <td class="tx-buff"></td>
             <td class="dynamic nudge">Regen</td>
             <td><input class="number-box" id="hpr" type="text" onkeypress="return validLong(event)" value="0" mark=" %"/></td>
@@ -388,6 +457,18 @@ Stat Calculator
             <td><input class="number-box" id="damage" type="text" onkeypress="return validLong(event)" value="0"/></td>
             <td></td>
         </tr>
+        <tr class="advanced">
+            <td class="tx-buff"></td>
+            <td class="dynamic tx-heal">Healing</td>
+            <td><input class="number-box" id="healing" type="text" onkeypress="return validLong(event)" value="0" positive /></td>
+            <td></td>
+        </tr>
+        <tr class="advanced">
+            <td class="tx-buff"></td>
+            <td class="dynamic nudge">Bite</td>
+            <td><input class="number-box" id="bite" type="text" onkeypress="return validLongFloat(event)" value="0" places="2" inverted positive /></td>
+            <td></td>
+        </tr>
         <tr>
             <td class="tx-buff"></td>
             <td class="dynamic tx-stam">Stamina</td>
@@ -397,7 +478,7 @@ Stat Calculator
         <tr>
             <td class="tx-buff"></td>
             <td class="dynamic nudge">Regen</td>
-            <td><input class="number-box" id="str" type="text" onkeypress="return validFloat(event)" value="0.0" places="1" decimal /></td>
+            <td><input class="number-box" id="str" type="text" onkeypress="return validLongFloat(event)" value="0" places="1" /></td>
             <td></td>
         </tr>
         <tr>
@@ -410,12 +491,6 @@ Stat Calculator
             <td class="tx-buff"></td>
             <td class="dynamic tx-spd">Speed</td>
             <td></td>
-            <td></td>
-        </tr>
-        <tr>
-            <td class="tx-buff"></td>
-            <td class="dynamic nudge">Swim</td>
-            <td><input class="number-box" id="swim" type="text" onkeypress="return validLong(event)" value="0" positive /></td>
             <td></td>
         </tr>
         <tr>
@@ -467,7 +542,7 @@ Stat Calculator
             <td><span class="number-box" id="health_out">0</span></td>
             <td></td>
         </tr>
-        <tr>
+        <tr class="advanced">
             <td class="tx-buff"></td>
             <td class="dynamic nudge">Regen</td>
             <td><span class="number-box" id="hpr_out">0 %</span></td>
@@ -479,6 +554,18 @@ Stat Calculator
             <td><span class="number-box" id="damage_out">0</span></td>
             <td></td>
         </tr>
+        <tr class="advanced">
+            <td class="tx-buff"></td>
+            <td class="dynamic tx-heal">Healing</td>
+            <td><span class="number-box" id="healing_out">0</span></td>
+            <td></td>
+        </tr>
+        <tr class="advanced">
+            <td class="tx-buff"></td>
+            <td class="dynamic nudge">Bite</td>
+            <td><span class="number-box" id="bite_out">0</span></td>
+            <td></td>
+        </tr>
         <tr>
             <td class="tx-buff"></td>
             <td class="dynamic tx-stam">Stamina</td>
@@ -488,7 +575,7 @@ Stat Calculator
         <tr>
             <td class="tx-buff"></td>
             <td class="dynamic nudge">Regen</td>
-            <td><span class="number-box" id="str_out">0.0</span></td>
+            <td><span class="number-box" id="str_out">0</span></td>
             <td></td>
         </tr>
         <tr>
@@ -501,12 +588,6 @@ Stat Calculator
             <td class="tx-buff"></td>
             <td class="dynamic tx-spd">Speed</td>
             <td></td>
-            <td></td>
-        </tr>
-        <tr>
-            <td class="tx-buff"></td>
-            <td class="dynamic nudge">Swim</td>
-            <td><span class="number-box" id="swim_out">0</span></td>
             <td></td>
         </tr>
         <tr>
@@ -529,6 +610,52 @@ Stat Calculator
         </tr>
     </tbody>
 </table>
+<div class="floater" hidden>
+<table>
+    <colgroup>
+       <col span="1" style="width: 50%;">
+       <col span="1" style="width: 50%;">
+    </colgroup>
+    <tbody>
+        <tr>
+            <td>Positive</td>
+            <td><input id="base_positive" type="checkbox" checked /></td>
+        </tr>
+        <tr>
+            <td>Base Value</td>
+            <td><input class="number-box" id="base_buff" type="text" onkeypress="return validLongNumber(event)" value="0" mark="%" places="1"/></td>
+        </tr>
+        <tr>
+            <td>Value per Stack</td>
+            <td><input class="number-box" id="base_inc" type="text" onkeypress="return validLongNumber(event)" value="0" mark="%" places="1"/></td>
+        </tr>
+        <tr>
+            <td>Starting Stacks</td>
+            <td><input class="number-box" id="base_min" type="text" onkeypress="return validLong(event)" value="0"/></td>
+        </tr>
+        <tr>
+            <td>Ending Stacks</td>
+            <td><input class="number-box" id="base_max" type="text" onkeypress="return validLong(event)" value="0"/></td>
+        </tr>
+        <tr>
+            <td>Additive</td>
+            <td><input id="base_additive" type="checkbox" /></td>
+        </tr>
+        <tr>
+            <td>Special Text</td>
+            <td><input id="base_special" type="checkbox" /></td>
+        </tr>
+        <tr class="special-toggle" hidden>
+            <td>Disabled or Enabled</td>
+            <td><input id="base_enabled" type="checkbox" /></td>
+        </tr>
+        <tr>
+            <td>Simulate</td>
+            <td><input class="slider" id="base_simulation" type="range" step="1" min="0" max="0" value="0" /><output>0</output></td>
+        </tr>
+    </tbody>
+</table>
+</div>
 <script>
     MathJax = {
         tex: {inlineMath: {'[+]': [['$', '$']]}},
@@ -542,11 +669,20 @@ Stat Calculator
         }
     };
     
+    function getOffset(el) {
+        const rect = el.getBoundingClientRect();
+        return {
+            left: rect.right + window.scrollX,
+            top: rect.top + window.scrollY
+        };
+    }
+    
     let to_char = str => str.charCodeAt(0);
     var codeZero = to_char('0');
     var codeNine = to_char('9');
     var codeDot = to_char('.');
     var codeComma = to_char(',');
+    var codeMinus = to_char('-');
     function validInt(value)
     {
         return value.charCode >= codeZero && value.charCode <= codeNine;
@@ -567,14 +703,28 @@ Stat Calculator
         return value.charCode == codeComma || validFloat(value);
     }
     
+    function validLongNumber(value)
+    {
+        return value.charCode == codeMinus || validLongFloat(value);
+    }
+    
     function isEmpty(str)
     {
         return str.trim().length === 0 
     }
     
-    function addCommas(num)
+    function simplifyDecimal(frac, places=0)
     {
-        return num.toLocaleString('en-US');
+        return (frac+0.000001).toFixed(places).replace(/0+$/,'').substring(1);
+    }
+    
+    function addCommas(num, places=0)
+    {
+        let [whole, frac] = getParts(num);
+        if (frac == 0)
+            return num.toLocaleString('en-US');
+        else
+            return `${whole.toLocaleString('en-US')}${simplifyDecimal(frac, places)}`;
     }
     
     function checkNaN(val, def=0)
@@ -635,23 +785,23 @@ Stat Calculator
     
     function extractNumber(str)
     {
-        return +str.replace(/[^0-9.]/g, '');
+        return +str.replace(/[^0-9.\-]/g, '');
     }
     
     function roundForInput(number, input)
     {
-        return round(number, input.getAttribute('places') ?? 0); 
+        return round(number, +(input.getAttribute('places') ?? 0)); 
     }
     
     function getParts(number)
     {
-        let whole = Math.floor(number);
+        let whole = number < 0 ? -Math.floor(-number) : Math.floor(number);
         return [whole, Math.abs(number - whole)];
     }
     
-    function joinParts(whole, frac, commas=false)
+    function joinParts(whole, frac, places=0, commas=false)
     {
-        return (commas ? addCommas(whole) : whole.toString()) + frac.toString().substring(1);
+        return (commas ? addCommas(whole, places) : whole.toString()) + simplifyDecimal(frac, places);
     }
     
     function formatForInput(number, input)
@@ -662,19 +812,15 @@ Stat Calculator
         
         let tx;
         
+        let places = +(input.getAttribute('places') ?? 0);
+        
         if (!decimal)
-            tx = addCommas(num);
+            tx = addCommas(num, places);
         else
         {
-            let whole = Math.floor(num);
+            let [whole, frac] = getParts(num);
             
-            let frac = Math.abs(num - whole);
-            
-            let places = input.getAttribute('places') ?? 0;
-            
-            frac = frac.toFixed(places).substring(1);
-            
-            tx = addCommas(whole) + frac;
+            tx = joinParts(whole, frac, places, true);
         }
             
         let mark = input.getAttribute('mark');
@@ -685,11 +831,192 @@ Stat Calculator
         return tx;
     }
     
+    const effectReference = {
+        "HEALTH": ["health"],
+        "HP REGEN": ["hpr"],
+        "HEALTH REGEN": ["hpr"],
+        "STAMINA": ["stamina"],
+        "STAMINA REGEN": ["str"],
+        "SPEED": ["walk", "sprint", "fly"],
+        "WALK SPEED": ["walk"],
+        "SPRINT SPEED": ["sprint"],
+        "FLY SPEED": ["fly"],
+        "BITE": ["bite"],
+        "BITE COOLDOWN": ["bite"],
+        "WEIGHT": ["weight"],
+        "DAMAGE": ["damage"],
+    };
+    
+    function calculateStackValue(ailment)
+    {
+        return Math.floor(
+            extractNumber(ailment.find('.tx-stack').get(0).value, 0)
+        );
+    }
+    
+    function calculateEffect(ailment, name)
+    {
+        let mult = 1;
+        let add = 0;
+        
+        let stack = calculateStackValue(ailment);
+        let type;
+        let ref;
+        for (let buff of ailment.find('.ailment-table').toArray())
+        {
+            type = $(buff).find('.tx-kind').get(0).value.trim().toUpperCase();
+            
+            //console.log(type, name);
+            
+            if (!(type in effectReference)) continue;
+            
+            ref = effectReference[type];
+            
+            if (ref.includes(name))
+            {
+                if (buff.dataset['additive']!=='true')
+                    mult *= (1 + calcBuff(buff, stack) / 100);
+                else
+                    add += calcBuff(buff, stack) / 100;
+            }
+        }
+        return [mult, add];
+    }
+    
+    function calcBuffText(buff, stack)
+    {
+        const base = +(buff.dataset['base'] ?? 0);
+        const min = +(buff.dataset['min'] ?? 0);
+        const max = +(buff.dataset['max'] ?? 0);
+        const special = buff.dataset['special']=='true';
+        const enabled = buff.dataset['enabled']=='true';
+        
+        if (min > max)
+            return (special && stack <= max) ? (enabled ? 'Enabled' : 'Disabled') : null;
+        else
+            return (special && stack >= max) ? (enabled ? 'Enabled' : 'Disabled') : null;
+    }
+    
+    function calcBuff(buff, stack)
+    {
+        const base = +(buff.dataset['base'] ?? 0);
+        const inc = +(buff.dataset['inc'] ?? 0);
+        const min = +(buff.dataset['min'] ?? 0);
+        const max = +(buff.dataset['max'] ?? 0);
+        const special = buff.dataset['special']=='true';
+        const enabled = buff.dataset['enabled']=='true';
+        
+        if ((max - min) == 0)
+            return base;
+        else
+        {
+            let calc;
+            
+            if (min > max)
+                calc = base + inc * clamp(min - stack, 0, min - max);
+            else
+                calc = base + inc * clamp(stack - min, 0, max - min);
+                
+            return calc;
+        }
+    }
+    
+    function calcBuffDisplay(buff, stack)
+    {
+        const tx = calcBuffText(buff, stack);
+        
+        if (tx)
+            return tx;
+        else
+        {
+            const result = calcBuff(buff, stack)
+            
+            if (result == 0)
+                return '+';
+            else
+                return simplePercent(result);
+        }
+    }
+    
+    function updateMainText(buff)
+    {
+        const stack = calculateStackValue($(buff).closest('.ailment'));
+        const fx = $(buff).find('.tx-effect');
+        fx.text(calcBuffDisplay(buff, stack));
+        
+        fx.get(0).classList.remove('effect-positive');
+        fx.get(0).classList.remove('effect-negative');
+        if (buff.dataset['positive']=='true')
+            fx.get(0).classList.add('effect-positive');
+        else
+            fx.get(0).classList.add('effect-negative');
+        
+        recalculateAilments();
+    }
+    
+    function saveBuffSettings(buff, settings)
+    {
+        buff.dataset['base'] = extractNumber(settings.find('#base_buff').get(0).value);
+        buff.dataset['inc'] = extractNumber(settings.find('#base_inc').get(0).value);
+        buff.dataset['min'] = extractNumber(settings.find('#base_min').get(0).value);
+        buff.dataset['max'] = extractNumber(settings.find('#base_max').get(0).value);
+        buff.dataset['special'] = settings.find('#base_special').get(0).checked.toString();
+        buff.dataset['enabled'] = settings.find('#base_enabled').get(0).checked.toString();
+        buff.dataset['positive'] = settings.find('#base_positive').get(0).checked.toString();
+        buff.dataset['additive'] = settings.find('#base_additive').get(0).checked.toString();
+    }
+    
+    function setBuffDefaults(buff)
+    {
+        buff.dataset['base'] = 0;
+        buff.dataset['inc'] = 0;
+        buff.dataset['min'] = 0;
+        buff.dataset['max'] = 0;
+        buff.dataset['special'] = false.toString();
+        buff.dataset['enabled'] = false.toString();
+        buff.dataset['positive'] = true.toString();
+        buff.dataset['additive'] = false.toString();
+    }
+    
+    function loadBuffSettings(buff, settings)
+    {
+        settings.find('#base_positive').get(0).checked = buff.dataset['positive']=='true';
+        settings.find('#base_buff').get(0).value = buff.dataset['base'] ?? '0';
+        settings.find('#base_inc').get(0).value = buff.dataset['inc'] ?? '0';
+        settings.find('#base_min').get(0).value = buff.dataset['min'] ?? '0';
+        settings.find('#base_max').get(0).value = buff.dataset['max'] ?? '0';
+        settings.find('#base_special').get(0).checked = buff.dataset['special']=='true';
+        settings.find('#base_enabled').get(0).checked = buff.dataset['enabled']=='true';
+        settings.find('#base_additive').get(0).checked = buff.dataset['additive']=='true';
+        
+        settings.find('input').change();
+    }
+    
+    function readjustFloater()
+    {
+        if (!last_item)
+            $('.floater').hide();
+        else if (!$(last_item).parent().length)
+        {   
+            last_item = null;
+            $('.floater').hide();
+        }    
+        else
+        {
+            const off = getOffset(last_item);
+            $('.floater').css('left', off.left);
+            $('.floater').css('top', off.top);
+            $('.floater').show();
+        }
+    }
+    
     function recalculateAilments()
     {
         for (let child of $('input.number-box').toArray())
         {
             let out = $(`#${child.id}_out`);
+            if (out.length === 0) continue;
+            
             let buff_tx = out.parent().parent().find('.tx-buff');
             
             let number = extractNumber(child.value);
@@ -699,13 +1026,21 @@ Stat Calculator
             number *= hidden_buff;
             
             let pos_only = child.getAttribute('positive') !== null;
+            let invert = child.getAttribute('inverted') !== null;
             
             if (pos_only && number < 0) number = 0.0;
             
             let original = roundForInput(number, child);
             
-            let buff = 0.5;
-            let additive = 0.0;
+            let [buff, additive] = [1.0, 0.0];
+            let a;
+            let b;
+            for (let ailment of $('.ailment:not(.dont-delete)').toArray())
+            {
+                [a, b] = calculateEffect($(ailment), child.id);
+                buff *= a;
+                additive += b;
+            }
             
             number = number * buff + number * additive;
             
@@ -721,10 +1056,12 @@ Stat Calculator
             
             let pls = change > 0 ? '+' : '';
             
-            let changetx = change==0 ? '' : `(${pls}${joinParts(whole,frac,true)}%)`;
+            let changetx = change==0 ? '' : `(${pls}${joinParts(whole,frac,1,true)}%)`;
             
             let is_good = change > 0;
             let is_bad = change < 0;
+            if (invert)
+                [is_bad, is_good] = [is_good, is_bad];
             
             let single = out[0];
             single.classList.remove('buff-positive');
@@ -734,9 +1071,9 @@ Stat Calculator
             else if (is_bad)
                 single.classList.add('buff-negative');
             
-            out.html(formatForInput(number, child));
+            out.text(formatForInput(number, child));
             
-            buff_tx.html(changetx);
+            buff_tx.text(changetx);
         }
     }
     
@@ -747,7 +1084,7 @@ Stat Calculator
         cs = this.value.length - cs;
         ce = this.value.length - ce;
       
-        let tx = this.value.replace(/[^0-9.]/g, '');
+        let tx = this.value.replace(/[^0-9.\-]/g, '');
 
         this.value = formatForInput(replaceIfEmpty(tx, 0), this);
         
@@ -761,6 +1098,10 @@ Stat Calculator
         $(this).parent().remove();
         
         event.stopPropagation();
+        
+        readjustFloater();
+        
+        recalculateAilments();
     }
     
     function jquerySame(q1, q2)
@@ -777,19 +1118,25 @@ Stat Calculator
     function onAilmentClick(event)
     {
         const clickable = $(event.target).closest('.clickable');
+        
         if (!jquerySame(clickable, $(this))) return;
         
         const parent = $(this).parent();
         const hidden = parent.find('.collapsible').is(":hidden");
-        parent.parent().find('.collapsible').hide();
-        parent.find('.collapsible').toggle(hidden);
+        parent.parent().find('.collapsible, .name-hide').hide();
+        parent.find('.collapsible, .name-hide').toggle(hidden);
         
         event.stopPropagation();
+        
+        if (last_item)
+            last_item = null;
+        
+        readjustFloater();
     }
     
     function passthrough(event) { event.stopPropagation(); }
     
-
+    addEventListener("resize", readjustFloater);
     
     for (let child of $('input.number-box').toArray())
     {
@@ -799,9 +1146,9 @@ Stat Calculator
     
     const ailment_adder = '<div class="ailment-info ailment-plus clickable">+</div>';
     
-    const ailment_stat = '<table class="ailment-info ailment-table"><colgroup><col span="1" style="width: 5%;"><col span="1" style="width: 60%;"><col span="1" style="width: 50%;"></colgroup><tbody><tr><td class="clickable remover tx-center">-</td><td><input type="text" class="un-text-box cramped tx-kind" id="effect" value="EFFECT"/></td><td class="clickable tx-effect">+</td></tr></tbody></table>';
+    const ailment_stat = '<table class="ailment-info ailment-table"><colgroup><col span="1" style="width: 2%;"><col span="1" style="width: 65%;"><col span="1" style="width: 50%;"></colgroup><tbody><tr><td class="clickable remover tx-center">X</td><td><input type="text" class="un-text-box cramped tx-kind" id="effect" value="EFFECT"/></td><td class="clickable tx-effect effect-positive">+</td></tr></tbody></table>';
     
-    const ailment_template = '<div class="ailment custom-ailment"><div class="clickable container"><img src="ailment_icon.png" class="ail-main" /></div><img class="btn-close clickable" src="close_icon.png"><input type="text" class="un-text-box tx-stack cramped" value="" /><div class="collapsible" hidden>'+ailment_adder+'</div></div>';
+    const ailment_template = '<div class="ailment custom-ailment"><div class="clickable container"><img src="ailment_icon.png" class="ail-main" /></div><img class="btn-close clickable" src="close_icon.png"><input type="text" class="un-text-box tx-stack cramped" value="" onkeypress="return validFloat(event)" /><div class="tx-center ailment-title">Ailment</div><input type="text" class="un-text-box tx-ailname cramped name-hide" value="Ailment" hidden /><div class="collapsible ailment-container" hidden>'+ailment_adder+'</div></div>';
     
         
     function onMinusClick()
@@ -810,9 +1157,16 @@ Stat Calculator
         
         const container = tbl.parent();
         
+        if (last_item === tbl.get(0))
+            last_item = null;
+        
         tbl.remove();
         
+        readjustFloater();
+        
         container.find('.ailment-plus').show();
+        
+        recalculateAilments();
     }
     
     function onPlusClick()
@@ -823,20 +1177,153 @@ Stat Calculator
         
         new_stat.find('.remover').on('click', onMinusClick);
         
+        new_stat.find('.tx-effect').on('click', onEditClick);
+        
+        setBuffDefaults(new_stat.get(0));
+        
         $(this).toggle(container.children().length <= 4); 
+        
+        recalculateAilments();
+    }
+    
+    let last_item = null;
+    function onEditClick()
+    {
+        let cur = $(this).closest('.ailment-table').get(0);
+        
+        const floater = $('.floater');
+        
+        if (cur === last_item)
+        {
+            last_item = null;
+            floater.hide();
+        }
+        else
+        {
+            last_item = cur;
+            loadBuffSettings(cur, floater);
+            readjustFloater();
+        } 
+    }
+    
+    function validateSimple()
+    {
+        this.value = isNaN(+this.value) ? "" : +this.value;
+    }
+    
+    function propagateName()
+    {
+        $(this).parent().find('.ailment-title').text(this.value);
+        
+        recalculateAilments();
+    }
+    
+    function lerp(a, b, c)
+    {
+        return a + (b - a) * c;
+    }
+    
+    function clamp(a, b, c)
+    {
+        return Math.min(Math.max(a, b), c)
+    }
+    
+    function simplePercent(val, end=null)
+    {
+        if (end !== null)
+            return end ? 'Enabled' : 'Disabled';
+        const sgn = val > 0 ? '+' : '';
+        return `${sgn}${round(val,1)}%`;
+    }
+    
+    function updateSimulation(output)
+    {
+        const settings = $(output).closest('.floater');
+        const slider = settings.find('.slider').get(0);
+        const base = extractNumber(settings.find('#base_buff').get(0).value);
+        const inc = extractNumber(settings.find('#base_inc').get(0).value);
+        
+        const start = extractNumber(settings.find('#base_min').get(0).value);
+        const end = extractNumber(settings.find('#base_max').get(0).value);
+        const special = settings.find('#base_special').get(0).checked;
+        const enabled = settings.find('#base_enabled').get(0).checked;
+        
+        if (last_item) $(output).text(calcBuffDisplay(last_item, slider.value));
+    }
+    
+    function updateAilmentSettings(settings)
+    {
+        const slider = settings.find('.slider').get(0);
+        const base = extractNumber(settings.find('#base_buff').get(0).value);
+        const inc = extractNumber(settings.find('#base_inc').get(0).value);
+        const start = extractNumber(settings.find('#base_min').get(0).value);
+        const end = extractNumber(settings.find('#base_max').get(0).value);
+        
+        const output = settings.find('output');
+        
+        slider.min = Math.min(start, end);
+        slider.max = Math.max(start, end);
+        slider.value = slider.min;
+        
+        if (last_item) saveBuffSettings(last_item, settings);
+    }
+    
+    function onSliderMoved()
+    {
+        updateSimulation($(this).parent().find('output'));
+    }
+    
+    function onSettingChanged()
+    {
+        const root = $(this).closest('.floater');
+        
+        updateAilmentSettings(root);
+        
+        updateSimulation(root.find('output'));
+        
+        if (last_item) updateMainText(last_item);
+    }
+    
+    function onStackUpdate()
+    {
+        for (let buff of $(this).closest('.ailment').find('.ailment-table').toArray())
+            updateMainText(buff);
     }
     
     $('.dont-delete').on('click', function(){     
         let new_ailment = $(ailment_template).insertBefore($('.dont-delete'));
         
-        new_ailment.find('.collapsible').hide();
+        new_ailment.find('.collapsible, .name-hide').hide();
         
         new_ailment.find('.container').on('click', onAilmentClick);
+        
+        new_ailment.find('.tx-stack').on('change', validateSimple);
+        
+        new_ailment.find('.tx-stack').on('change', onStackUpdate);
         
         new_ailment.find('.btn-close').on('click', onCloseClick);
         
         new_ailment.find('.ailment-plus').on('click', onPlusClick);
+        
+        new_ailment.find('.tx-ailname').on('change', propagateName);
+        
+        readjustFloater();
     });
+    
+    $('#show_more').on('change', function(){
+        $('.advanced').toggle(this.checked);
+    });
+    
+    $('#base_special').on('change', function(){
+        const tbl = $(this).closest('table'); 
+        tbl.find('.special-toggle').toggle(this.checked);
+        tbl.find('#base_enabled').get(0).checked = false;
+    });
+    
+    $('.floater input:not([type=range])').on('change', onSettingChanged);
+    $('.floater input[type=range]').on('change', onSliderMoved);
+    $('.floater input[type=range]').on('input', onSliderMoved);
+    $('.floater').hide();
 </script>
 </body>
 </html>
