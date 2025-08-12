@@ -12,6 +12,7 @@
   src="https://code.jquery.com/jquery-3.7.1.min.js"
   integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
   crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/pieroxy/lz-string/libs/lz-string.js"></script>
 <link rel="stylesheet" href="../../style/theme.css">
 <style>
 html {
@@ -519,6 +520,8 @@ Stat Calculator
 <div id="ailments" class="ailment-list">
 <div class="ailment clickable dont-delete"><img src="ailment_icon.png" class="ail-main"/><div class="tx-ail">+</div></div>
 </div>
+<br />
+<button id="imp_all">Import Ailments</button> <button id="exp_all">Export Ailments</button>
 <br /><hr /><br />
 <h2>Modified Stats</h2>
 <br />
@@ -677,6 +680,26 @@ Stat Calculator
         };
     }
     
+    function compress(str)
+    {
+        return btoa(encodeURIComponent(LZString.compress(str)));
+    }
+    
+    function decompress(str)
+    {
+        return LZString.decompress(decodeURIComponent(atob(str)));
+    }
+    
+    function compressJson(json)
+    {
+        return compress(JSON.stringify(json));
+    }
+    
+    function decompressJson(json)
+    {
+        return JSON.parse(decompress(json));
+    }
+    
     let to_char = str => str.charCodeAt(0);
     var codeZero = to_char('0');
     var codeNine = to_char('9');
@@ -715,7 +738,7 @@ Stat Calculator
     
     function simplifyDecimal(frac, places=0)
     {
-        return (frac+0.000001).toFixed(places).replace(/0+$/,'').substring(1);
+        return (+frac+0.000001).toFixed(places).replace(/0+$/,'').substring(1);
     }
     
     function addCommas(num, places=0)
@@ -954,6 +977,177 @@ Stat Calculator
         recalculateAilments();
     }
     
+    function datasetSerialize(buff)
+    {
+        return {
+            base: +buff.dataset['base'],
+            inc: +buff.dataset['inc'],
+            min: +buff.dataset['min'],
+            max: +buff.dataset['max'],
+            special: buff.dataset['special']=='true',
+            enabled: buff.dataset['enabled']=='true',
+            positive: buff.dataset['positive']=='true',
+            additive: buff.dataset['additive']=='true',
+            effect: $(buff).find('.tx-kind').get(0).value,
+        };
+    }
+    
+    function datasetDeserialize(buff, dict)
+    {
+        buff.dataset['base'] = dict.base;
+        buff.dataset['inc'] = dict.inc;
+        buff.dataset['min'] = dict.min;
+        buff.dataset['max'] = dict.max;
+        buff.dataset['special'] = dict.special;
+        buff.dataset['enabled'] = dict.enabled;
+        buff.dataset['positive'] = dict.positive;
+        buff.dataset['additive'] = dict.additive;
+        
+        $(buff).find('.tx-kind').get(0).value = dict.effect;
+        
+        for (let inp of $(buff).find('input').toArray())
+            $(inp).change();
+    }
+    
+    function createNewBuff(container, data=null)
+    { 
+        let new_stat = $(ailment_stat).insertBefore(container.find('.ailment-plus'));
+        
+        new_stat.find('.remover').on('click', onMinusClick);
+        
+        new_stat.find('.tx-effect').on('click', onEditClick);
+        
+        new_stat.find('.tx-kind').on('change', recalculateAilments);
+        
+        setBuffDefaults(new_stat.get(0));
+        
+        if (data !== null)
+            datasetDeserialize(new_stat.get(0), data);
+        
+        recalculateAilments();
+        
+        container.find('.ailment-plus').toggle(container.children().length <= 4); 
+        
+        return new_stat;
+    }
+    
+    function importStoredBuffs(container, data)
+    {
+        for (let item of data)
+            createNewBuff(container, item);
+    }
+    
+    function exportStoredAilment(container)
+    {
+        let total = [];
+        
+        for (let buff of container.find('.ailment-table').toArray())
+            total.push(datasetSerialize(buff));
+            
+        return {
+            name: container.find('.tx-ailname').get(0).value, 
+            stacks: container.find('.tx-stack').get(0).value ?? ""	,
+            data: total
+        };
+    }
+    
+    function createNewAilment(name="Ailment")
+    {
+        let new_ailment = $(ailment_template).insertBefore($('.dont-delete'));
+        
+        new_ailment.find('.collapsible, .name-hide').hide();
+        
+        new_ailment.find('.container').on('click', onAilmentClick);
+        
+        new_ailment.find('.tx-stack').on('change', validateSimple);
+        
+        new_ailment.find('.tx-stack').on('change', onStackUpdate);
+        
+        new_ailment.find('.btn-close').on('click', onCloseClick);
+        
+        new_ailment.find('.ailment-plus').on('click', onPlusClick);
+        
+        new_ailment.find('.tx-ailname').on('change', propagateName);
+        
+        new_ailment.find('.tx-ailname').get(0).value = name;
+        
+        new_ailment.find('.tx-ailname').change();
+        
+        readjustFloater();
+        
+        return new_ailment;
+    }
+    
+    function importStoredAilment(data)
+    {
+        const ail = createNewAilment(data.name);
+        
+        importStoredBuffs(
+            ail.find('.ailment-container'), 
+            data.data
+        );
+        
+        ail.find('.tx-stack').get(0).value = data.stacks;
+        
+        ail.find('.tx-stack').change();
+    }
+    
+    function exportAllAilments()
+    {
+        let ails = [];
+        for (let ail of $('.custom-ailment').toArray())
+            ails.push(exportStoredAilment($(ail)));
+         return ails;
+    }
+    
+    function importAllAilments(ails, clear=false)
+    {
+        if (clear)
+        {
+            last_item = null;
+            for (let ail of $('.custom-ailment').toArray())
+                $(ail).remove();
+        }
+        
+        readjustFloater();
+        
+        for (let ail of ails)
+            importStoredAilment(ail);
+    }
+    
+    function processExportAilments()
+    {
+        let ails = exportAllAilments();
+        console.log(ails);
+        prompt("Copy this code below to share your ailment setup!", JSON.stringify(ails));
+    }
+    
+    function processImportAilments()
+    {
+        let result = prompt("Insert your ailment share code below!");
+        
+        if (result==null) return;
+        
+        try
+        {
+            let data = JSON.parse(result);
+            console.log(data);
+            let count = data.length;
+            let go = confirm("Import " + count + " ailments?");
+            if (!go) return;
+            
+            let over = confirm("Overwrite existing ailments?");
+            importAllAilments(data, over);
+        }
+        catch (error)
+        {
+            alert('Import failed');
+        }
+    }
+    
+    $('#imp_all').on('click', processImportAilments);
+    $('#exp_all').on('click', processExportAilments);
+    
     function saveBuffSettings(buff, settings)
     {
         buff.dataset['base'] = extractNumber(settings.find('#base_buff').get(0).value);
@@ -1148,7 +1342,7 @@ Stat Calculator
     
     const ailment_stat = '<table class="ailment-info ailment-table"><colgroup><col span="1" style="width: 2%;"><col span="1" style="width: 65%;"><col span="1" style="width: 50%;"></colgroup><tbody><tr><td class="clickable remover tx-center">X</td><td><input type="text" class="un-text-box cramped tx-kind" id="effect" value="EFFECT"/></td><td class="clickable tx-effect effect-positive">+</td></tr></tbody></table>';
     
-    const ailment_template = '<div class="ailment custom-ailment"><div class="clickable container"><img src="ailment_icon.png" class="ail-main" /></div><img class="btn-close clickable" src="close_icon.png"><input type="text" class="un-text-box tx-stack cramped" value="" onkeypress="return validFloat(event)" /><div class="tx-center ailment-title">Ailment</div><input type="text" class="un-text-box tx-ailname cramped name-hide" value="Ailment" hidden /><div class="collapsible ailment-container" hidden>'+ailment_adder+'</div></div>';
+    const ailment_template = '<div class="ailment custom-ailment"><div class="clickable container"><img src="ailment_icon.png" class="ail-main" /></div><img class="btn-close clickable" src="close_icon.png"><input type="text" class="un-text-box tx-stack cramped" value="" onkeypress="return validFloat(event)" places="1" /><div class="tx-center ailment-title">Ailment</div><input type="text" class="un-text-box tx-ailname cramped name-hide" value="Ailment" hidden /><div class="collapsible ailment-container" hidden>'+ailment_adder+'</div></div>';
     
         
     function onMinusClick()
@@ -1173,17 +1367,7 @@ Stat Calculator
     {
         const container = $(this).parent();
         
-        let new_stat = $(ailment_stat).insertBefore($(this));
-        
-        new_stat.find('.remover').on('click', onMinusClick);
-        
-        new_stat.find('.tx-effect').on('click', onEditClick);
-        
-        setBuffDefaults(new_stat.get(0));
-        
-        $(this).toggle(container.children().length <= 4); 
-        
-        recalculateAilments();
+        createNewBuff(container);
     }
     
     let last_item = null;
@@ -1208,7 +1392,8 @@ Stat Calculator
     
     function validateSimple()
     {
-        this.value = isNaN(+this.value) ? "" : +this.value;
+        let n = round(extractNumber(this.value, 0), 1);
+        this.value = this.value.trim().length ? n : "";
     }
     
     function propagateName()
@@ -1290,25 +1475,7 @@ Stat Calculator
             updateMainText(buff);
     }
     
-    $('.dont-delete').on('click', function(){     
-        let new_ailment = $(ailment_template).insertBefore($('.dont-delete'));
-        
-        new_ailment.find('.collapsible, .name-hide').hide();
-        
-        new_ailment.find('.container').on('click', onAilmentClick);
-        
-        new_ailment.find('.tx-stack').on('change', validateSimple);
-        
-        new_ailment.find('.tx-stack').on('change', onStackUpdate);
-        
-        new_ailment.find('.btn-close').on('click', onCloseClick);
-        
-        new_ailment.find('.ailment-plus').on('click', onPlusClick);
-        
-        new_ailment.find('.tx-ailname').on('change', propagateName);
-        
-        readjustFloater();
-    });
+    $('.dont-delete').on('click', function(){createNewAilment.call(this);});
     
     $('#show_more').on('change', function(){
         $('.advanced').toggle(this.checked);
