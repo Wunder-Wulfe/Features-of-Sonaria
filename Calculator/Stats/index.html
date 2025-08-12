@@ -1331,6 +1331,7 @@ Stat Calculator
     function passthrough(event) { event.stopPropagation(); }
     
     addEventListener("resize", readjustFloater);
+    addEventListener("scroll", readjustFloater);
     
     for (let child of $('input.number-box').toArray())
     {
@@ -1491,6 +1492,8 @@ Stat Calculator
     $('.floater input[type=range]').on('change', onSliderMoved);
     $('.floater input[type=range]').on('input', onSliderMoved);
     $('.floater').hide();
+    
+    $(document).on('mousemove', readjustFloater);
 </script>
 </body>
 </html>
