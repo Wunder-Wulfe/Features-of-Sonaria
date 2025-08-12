@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="twitter:card" content="summary" />
+<meta property="og:title" content="Features of Sonaria: Damage Calculator" />
+<meta property="og:description" content="Calculate damage values after taking into account the proportions between the weights of creatures." />
+<meta property="og:image" content="https://wunder-wulfe.github.io/Features-of-Sonaria/Calculator/Damage/demo.png">
+<link rel="shortcut icon" href="https://wunder-wulfe.github.io/Features-of-Sonaria/icon.ico">
+<title>Damage Calculator</title>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js"></script>
+<script
+  src="https://code.jquery.com/jquery-3.7.1.min.js"
+  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="../../style/theme.css">
+<style>
+html {
+    background: var(--primary-color);
+    color: var(--text-color);
+}
+
+table {
+    background: var(--secondary-color);
+}
+
+body:not(.MathJax) {
+    text-align: center;
+    font-family: Helvetica, Arial;
+    font-size: 1.2em;
+}
+
+.MathJax {
+    font-size: 1.1em !important;
+    padding: 0;
+    margin: 0;
+}
+
+span {
+    font-weight: bold;
+}
+
+h1 {
+    padding: 25px;
+}
+
+table, h1 {
+    margin: auto;
+}
+
+td {
+    padding: 0.15em;
+    text-align: right !important;
+    vertical-align: bottom !important;
+    line-height: 60px;
+    font-size: 0.85em;
+}
+
+input[type=checkbox] {
+    width: 1.5em;
+    height: 1.5em;
+}
+
+.stat-box {
+    background: #3F3F3F;
+    width: 85%;
+    margin: auto;
+    border-radius: 0.5em;
+    font-size: 3.0em;
+}
+
+.tx-stats {
+    font-weight: bold;
+    font-size: 1.3em;
+    
+    text-align: center !important;
+    
+    background: linear-gradient(to bottom, #FFF, #DDD, #333);
+    -webkit-background-clip: text;
+    -webkit-text-stroke: 0.035em #333;
+    background-clip: text;
+    color: transparent;
+}
+
+.tx-age {
+    font-size: 0.4em;
+    -webkit-text-stroke: 0.03em #333;
+}
+
+.dynamic {
+    --dynamic-dark: #333;
+    color: var(--dynamic-color);
+    -webkit-text-stroke: 0.035em var(--dynamic-dark);
+    text-align: left !important;
+}
+
+.tx-hp {
+    --dynamic-color: #61FF6B;
+    --dynamic-dark: #18401B;
+}
+
+.tx-dmg {
+    --dynamic-color: #F33;
+    --dynamic-dark: #322;
+}
+
+.tx-stam {
+    --dynamic-color: #FE1;
+    --dynamic-dark: #332;
+}
+
+.tx-wgt {
+    --dynamic-color: #CF9;
+    --dynamic-dark: #231;
+}
+
+.tx-spd {
+    --dynamic-color: #2CF;
+    --dynamic-dark: #023;
+}
+
+.tx-buff 
+{
+    font-weight: bold;
+    font-style: italic;
+    font-size: 0.85em;
+    
+    background: linear-gradient(to bottom, #6A34FF, #6A34FF, #26135A);
+    -webkit-background-clip: text;
+    -webkit-text-stroke: 0.035em #190C3F;
+    background-clip: text;
+    color: transparent;
+}
+
+.force-left {
+    text-align: left !important;
+}
+
+.number-box {
+    font-style: italic;
+    font-weight: bold;
+    border: none;
+    background: none;
+    color: inherit;
+    -webkit-text-stroke: 0.03em #333;
+    display: inline;
+    font-family: inherit;
+    font-size: 0.9em;
+    text-align: inherit;
+    vertical-align: inherit;
+    padding: none;
+    width: 100%;
+    overflow: visible !important;
+}
+
+.buff-positive {
+    color: #3B6;
+    -webkit-text-stroke: 0.03em #132;
+}
+
+.buff-negative {
+    color: #F44;
+    -webkit-text-stroke: 0.03em #311;
+}
+
+.ailment-list {
+  width: 100%;
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+  margin: 0;
+  padding: 0;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.ailment {
+  position: relative;
+  margin: 0.2em;
+  vertical-align: center;
+  text-align: center;
+  width: 5.5em;
+  height: 5.5em;
+}
+
+.nudge:before {
+    content: "\00a0\00a0\00a0";
+}
+
+.tx-ail {
+    font-size: 3em;
+    line-height: 0.75em;
+    position: absolute;
+    text-align: center;
+    vertical-align: center;
+    top: 0;
+    left: 0;
+    margin: 0;
+    padding: 0;
+    word-break: break-all;
+    width: 100%;
+    height: 100%;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+.clickable {
+    transition: 0.05s ease-in-out;
+    user-select: none;
+}
+
+.clickable:hover {
+    filter: brightness(80%);
+}
+
+.clickable:active {
+    filter: brightness(50%);
+}
+
+</style>
+</head>
+<body>
+<h1>
+Stat Calculator
+</h1>
+<br /><hr /><br />
+<h2>Base Stats</h2>
+<br />
+<table class="stat-box">
+<colgroup>
+   <col span="1" style="width: 29%;">
+   <col span="1" style="width: 9%;">
+   <col span="1" style="width: 19%;">
+   <col span="1" style="width: 14%;">
+</colgroup>
+    <tbody>
+        <tr>
+            <td></td>
+            <td class="tx-stats">Stats</td>
+            <td class="tx-age">(altered with age)</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic tx-hp">Health</td>
+            <td><input class="number-box" id="health" type="text" onkeypress="return validLong(event)" value="0"/></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic nudge">Regen</td>
+            <td><input class="number-box" id="hpr" type="text" onkeypress="return validLong(event)" value="0" mark=" %"/></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic tx-dmg">Damage</td>
+            <td><input class="number-box" id="damage" type="text" onkeypress="return validLong(event)" value="0"/></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic tx-stam">Stamina</td>
+            <td><input class="number-box" id="stamina" type="text" onkeypress="return validLong(event)" value="0" positive /></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic nudge">Regen</td>
+            <td><input class="number-box" id="str" type="text" onkeypress="return validFloat(event)" value="0.0" places="1" decimal /></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic tx-wgt">Weight</td>
+            <td><input class="number-box" id="weight" type="text" onkeypress="return validLong(event)" value="0" mark=" lbs" positive /></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic tx-spd">Speed</td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic nudge">Swim</td>
+            <td><input class="number-box" id="swim" type="text" onkeypress="return validLong(event)" value="0" positive /></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic nudge">Walk</td>
+            <td><input class="number-box" id="walk" type="text" onkeypress="return validLong(event)" value="0" positive /></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic nudge">Sprint</td>
+            <td><input class="number-box" id="sprint" type="text" onkeypress="return validLong(event)" value="0" positive /></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic nudge">Fly</td>
+            <td><input class="number-box" id="fly" type="text" onkeypress="return validLong(event)" value="0" positive /></td>
+            <td></td>
+        </tr>
+    </tbody>
+</table>
+<br /><hr /><br />
+<h2>Ailments</h2>
+<br />
+<div id="ailments" class="ailment-list">
+<div class="ailment clickable dont-delete"><img src="ailment_icon.png" /><div class="tx-ail">+</div></div>
+</div>
+<br /><hr /><br />
+<h2>Modified Stats</h2>
+<br />
+<table class="stat-box">
+<colgroup>
+   <col span="1" style="width: 29%;">
+   <col span="1" style="width: 9%;">
+   <col span="1" style="width: 19%;">
+   <col span="1" style="width: 14%;">
+</colgroup>
+    <tbody>
+        <tr>
+            <td></td>
+            <td class="tx-stats">Stats</td>
+            <td class="tx-age">(altered with age)</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic tx-hp">Health</td>
+            <td><span class="number-box" id="health_out">0</span></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic nudge">Regen</td>
+            <td><span class="number-box" id="hpr_out">0 %</span></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic tx-dmg">Damage</td>
+            <td><span class="number-box" id="damage_out">0</span></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic tx-stam">Stamina</td>
+            <td><span class="number-box" id="stamina_out">0</span></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic nudge">Regen</td>
+            <td><span class="number-box" id="str_out">0.0</span></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic tx-wgt">Weight</td>
+            <td><span class="number-box" id="weight_out">0 lbs</span></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic tx-spd">Speed</td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic nudge">Swim</td>
+            <td><span class="number-box" id="swim_out">0</span></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic nudge">Walk</td>
+            <td><span class="number-box" id="walk_out">0</span></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic nudge">Sprint</td>
+            <td><span class="number-box" id="sprint_out">0</span></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tx-buff"></td>
+            <td class="dynamic nudge">Fly</td>
+            <td><span class="number-box" id="fly_out">0</span></td>
+            <td></td>
+        </tr>
+    </tbody>
+</table>
+<script>
+    MathJax = {
+        tex: {inlineMath: {'[+]': [['$', '$']]}},
+        svg: {fontCache: 'global'},
+        startup: {
+            ready: () => {
+                let x = MathJax.startup.defaultReady();
+                
+                return x;
+            }
+        }
+    };
+    
+    let to_char = str => str.charCodeAt(0);
+    var codeZero = to_char('0');
+    var codeNine = to_char('9');
+    var codeDot = to_char('.');
+    var codeComma = to_char(',');
+    function validInt(value)
+    {
+        return value.charCode >= codeZero && value.charCode <= codeNine;
+    }
+    
+    function validLong(value)
+    {
+        return value.charCode == codeComma || validInt(value);
+    }
+    
+    function validFloat(value)
+    {
+        return value.charCode == codeDot || validInt(value);
+    }
+    
+    function validLongFloat(value)
+    {
+        return value.charCode == codeComma || validFloat(value);
+    }
+    
+    function isEmpty(str)
+    {
+        return str.trim().length === 0 
+    }
+    
+    function addCommas(num)
+    {
+        return num.toLocaleString('en-US');
+    }
+    
+    function checkNaN(val, def=0)
+    {
+        return val==val ? val : def;
+    }
+    function replaceIfEmpty(str, value=0)
+    {
+        return isEmpty(str) ? value : checkNaN(+str, value);
+    }
+    
+    function tblRow(data=null, id=null, cls=null)
+    {
+        let r = document.createElement('tr');
+        let c = document.createElement('td');
+        if (data !== null) c.append(data);
+        r.append(c);
+        if (cls !== null) r.className  = cls;
+        if (id !== null) r.id = id;
+        return r;
+    }
+    
+    function addMathRow(eq)
+    {
+        $('#results').append(tblRow(`$$${eq}$$`, null, 'step'));	
+    }
+    
+    function reRenderMath()
+    {
+        MathJax.texReset();
+        MathJax.typesetPromise();
+    }
+    
+    function round(num, places=0)
+    {
+        const shift = Math.pow(10, places);
+        return num < 0 ? (-Math.floor(-num * shift + 0.5) / shift) 
+            : (Math.floor(num * shift + 0.5) / shift);
+    }
+    
+    function s(n)
+    {
+        return round(n, 5);
+    }
+    
+    function OnAilmentClick()
+    {
+        $(this).remove();
+    }
+    
+    function removeSubstring(str, sub)
+    {
+        return str.split(sub).join('');
+    }
+    
+    function removeAllSubstrings(str, ...subs)
+    {
+        for (let sub of subs)
+            str = removeSubstring(str, sub);
+        return str;
+    }
+    
+    function extractNumber(str)
+    {
+        return +str.replace(/[^0-9.]/g, '');
+    }
+    
+    function roundForInput(number, input)
+    {
+        return round(number, input.getAttribute('places') ?? 0); 
+    }
+    
+    function getParts(number)
+    {
+        let whole = Math.floor(number);
+        return [whole, Math.abs(number - whole)];
+    }
+    
+    function joinParts(whole, frac, commas=false)
+    {
+        return (commas ? addCommas(whole) : whole.toString()) + frac.toString().substring(1);
+    }
+    
+    function formatForInput(number, input)
+    {
+        let decimal = input.getAttribute('decimal') !== null;
+        
+        let num = roundForInput(number, input);
+        
+        let tx;
+        
+        if (!decimal)
+            tx = addCommas(num);
+        else
+        {
+            let whole = Math.floor(num);
+            
+            let frac = Math.abs(num - whole);
+            
+            let places = input.getAttribute('places') ?? 0;
+            
+            frac = frac.toFixed(places).substring(1);
+            
+            tx = addCommas(whole) + frac;
+        }
+            
+        let mark = input.getAttribute('mark');
+        
+        if (mark !== null)
+            tx += mark;
+            
+        return tx;
+    }
+    
+    function recalculateAilments()
+    {
+        for (let child of $('input.number-box').toArray())
+        {
+            let out = $(`#${child.id}_out`);
+            let buff_tx = out.parent().parent().find('.tx-buff');
+            
+            let number = extractNumber(child.value);
+            
+            let hidden_buff = 1.0;
+            
+            number *= hidden_buff;
+            
+            let pos_only = child.getAttribute('positive') !== null;
+            
+            if (pos_only && number < 0) number = 0.0;
+            
+            let original = roundForInput(number, child);
+            
+            let buff = 0.5;
+            let additive = 0.0;
+            
+            number = number * buff + number * additive;
+            
+            if (pos_only && number < 0) number = 0.0;
+            
+            number = roundForInput(number, child);
+            
+            let change = original==0 ? 0 : 100 * (number - original) / original;
+            
+            let [whole, frac] = getParts(change);
+            
+            frac = round(frac, 1).toFixed(1);
+            
+            let pls = change > 0 ? '+' : '';
+            
+            let changetx = change==0 ? '' : `(${pls}${joinParts(whole,frac,true)}%)`;
+            
+            let is_good = change > 0;
+            let is_bad = change < 0;
+            
+            let single = out[0];
+            single.classList.remove('buff-positive');
+            single.classList.remove('buff-negative');
+            if (is_good)
+                single.classList.add('buff-positive');
+            else if (is_bad)
+                single.classList.add('buff-negative');
+            
+            out.html(formatForInput(number, child));
+            
+            buff_tx.html(changetx);
+        }
+    }
+    
+    function onInputChange()
+    {
+        let [cs, ce] = [this.selectionStart, this.selectionEnd]; // Save cursor position
+        
+        cs = this.value.length - cs;
+        ce = this.value.length - ce;
+      
+        let tx = this.value.replace(/[^0-9.]/g, '');
+
+        this.value = formatForInput(replaceIfEmpty(tx, 0), this);
+        
+        this.setSelectionRange(tx.length - cs, tx.length - ce);
+        
+        recalculateAilments();
+    }
+    
+    for (let child of $('input.number-box').toArray())
+    {
+        $(child).on('change', onInputChange);
+        onInputChange.call(child);
+    }
+    
+    $('.dont-delete').on('click', function(){
+        new_ailment = $('<div class="ailment custom-ailment clickable"><img src="ailment_icon.png" /></div>');
+        
+        new_ailment.insertBefore($('.dont-delete'));
+        
+        new_ailment.on('click', OnAilmentClick);
+    });
+</script>
+</body>
+</html>
