@@ -977,31 +977,42 @@ Stat Calculator
         recalculateAilments();
     }
     
+    function dictAdd(dataset, key, value, ignoreValue)
+    {
+        if (value !== ignoreValue)
+            dataset[key] = value;
+    }
+    
     function datasetSerialize(buff)
     {
-        return {
-            base: +buff.dataset['base'],
-            inc: +buff.dataset['inc'],
-            min: +buff.dataset['min'],
-            max: +buff.dataset['max'],
-            special: buff.dataset['special']=='true',
-            enabled: buff.dataset['enabled']=='true',
-            positive: buff.dataset['positive']=='true',
-            additive: buff.dataset['additive']=='true',
-            effect: $(buff).find('.tx-kind').get(0).value,
+        data = {
+            effect: $(buff).find('.tx-kind').get(0).value
         };
+        
+        dictAdd(data, 'base', +buff.dataset['base'], 0);
+        dictAdd(data, 'inc', +buff.dataset['inc'], 0);
+        
+        dictAdd(data, 'min', +buff.dataset['min'], 0);
+        dictAdd(data, 'max', +buff.dataset['max'], 0);
+        
+        dictAdd(data, 'positive', buff.dataset['positive']=='true', true);
+        dictAdd(data, 'special', buff.dataset['special']=='true', false);
+        dictAdd(data, 'enabled', buff.dataset['enabled']=='true', false);
+        dictAdd(data, 'additive', buff.dataset['additive']=='true', false);
+        
+        return data;
     }
     
     function datasetDeserialize(buff, dict)
     {
-        buff.dataset['base'] = dict.base;
-        buff.dataset['inc'] = dict.inc;
-        buff.dataset['min'] = dict.min;
-        buff.dataset['max'] = dict.max;
-        buff.dataset['special'] = dict.special;
-        buff.dataset['enabled'] = dict.enabled;
-        buff.dataset['positive'] = dict.positive;
-        buff.dataset['additive'] = dict.additive;
+        buff.dataset['base'] = dict.base ?? 0;
+        buff.dataset['inc'] = dict.inc ?? 0;
+        buff.dataset['min'] = dict.min ?? 0;
+        buff.dataset['max'] = dict.max ?? 0;
+        buff.dataset['positive'] = dict.positive ?? true;
+        buff.dataset['special'] = dict.special ?? false;
+        buff.dataset['enabled'] = dict.enabled ?? false;
+        buff.dataset['additive'] = dict.additive ?? false;
         
         $(buff).find('.tx-kind').get(0).value = dict.effect;
         
@@ -1044,11 +1055,18 @@ Stat Calculator
         for (let buff of container.find('.ailment-table').toArray())
             total.push(datasetSerialize(buff));
             
-        return {
-            name: container.find('.tx-ailname').get(0).value, 
-            stacks: container.find('.tx-stack').get(0).value ?? ""	,
-            data: total
+        let data = {
+            name: container.find('.tx-ailname').get(0).value
         };
+        
+        let stack_text = container.find('.tx-stack').get(0).value ?? "";
+        
+        if (stack_text !== "")
+            data.stacks = extractNumber(stack_text, 0);
+        
+        data.data = total;
+        
+        return data;
     }
     
     function createNewAilment(name="Ailment")
@@ -1087,7 +1105,7 @@ Stat Calculator
             data.data
         );
         
-        ail.find('.tx-stack').get(0).value = data.stacks;
+        ail.find('.tx-stack').get(0).value = data.stacks ?? "";
         
         ail.find('.tx-stack').change();
     }
@@ -1122,6 +1140,36 @@ Stat Calculator
         prompt("Copy this code below to share your ailment setup!", JSON.stringify(ails));
     }
     
+    function ailBuffToString(buff)
+    {
+        let val = buff.base ?? 0;
+        let pls = val < 0 ? '-' : '+';
+        return `${pls}${buff.effect.toUpperCase()}`;
+    }
+    
+    function ailBuffsToString(ail)
+    {
+        let arr = [];
+        
+        for (let buff of ail.data)
+            arr.push(ailBuffToString(buff));
+        
+        return `<${arr.join(', ')}>`;
+    }
+    
+    function ailToString(ail)
+    {
+        let tx = `"${ail.name}"`;
+        
+        if ((ail.stacks ?? "") !== "")
+            tx += ` (${ail.stacks})`;
+            
+        if (ail.data.length)
+            tx += ' ' + ailBuffsToString(ail);
+        
+        return tx;
+    }
+    
     function processImportAilments()
     {
         let result = prompt("Insert your ailment share code below!");
@@ -1133,7 +1181,16 @@ Stat Calculator
             let data = JSON.parse(result);
             console.log(data);
             let count = data.length;
-            let go = confirm("Import " + count + " ailments?");
+            let ailnames = [];
+            for (const [key, ail] of data.entries())
+                ailnames.push(
+                    `${(key+1).toLocaleString('en-us')}. ${ailToString(ail)}`
+                );
+                
+            let go = confirm(
+                "Import the following " + count + " ailments?\n\n" 
+                + ailnames.join('\n')
+            );
             if (!go) return;
             
             let over = confirm("Overwrite existing ailments?");
